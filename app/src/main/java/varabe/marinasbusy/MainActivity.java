@@ -72,7 +72,7 @@ public class MainActivity extends AppCompatActivity {
         if (currentEvent == null) {
             status = getString(R.string.free_status);
         } else {
-            status = R.string.status_phrase + " " + currentEvent.title;
+            status = getString(R.string.status_phrase) + " " + currentEvent.title;
         }
         statusView.setText(status);
     }
