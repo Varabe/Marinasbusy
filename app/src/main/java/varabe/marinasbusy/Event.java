@@ -14,7 +14,6 @@ class Event {
             Events.DURATION,
             Events.EVENT_TIMEZONE,
             Events.RRULE,
-            Events.ACCESS_LEVEL
     };
     private static final int
             PROJECTION_TITLE = 0,
@@ -22,8 +21,7 @@ class Event {
             PROJECTION_DTEND = 2,
             PROJECTION_DURATION = 3,
             PROJECTION_EVENT_TIMEZONE = 4,
-            PROJECTION_EVENT_RRULE = 5,
-            PROJECTION_ACCESS_LEVEL = 6;
+            PROJECTION_EVENT_RRULE = 5;
     private static final String querySelection = String.format(
             "%s = %s AND %s = 0 AND ((%s > ?) OR (%s IS NOT NULL))",
             Events.AVAILABILITY,
@@ -57,8 +55,7 @@ class Event {
                 cur.getLong(PROJECTION_DTEND),
                 cur.getString(PROJECTION_DURATION),
                 cur.getString(PROJECTION_EVENT_TIMEZONE),
-                cur.getString(PROJECTION_EVENT_RRULE),
-                cur.getInt(PROJECTION_ACCESS_LEVEL) == Events.ACCESS_PUBLIC
+                cur.getString(PROJECTION_EVENT_RRULE)
             );
             startTime = eventStartAndEnd[0];
             endTime = eventStartAndEnd[1];

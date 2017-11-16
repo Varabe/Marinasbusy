@@ -39,17 +39,28 @@ class TimeConverter {
     }
     long[] getEventTime(
             long startTime, long endTime, String rfcDuration,
-            String timeZoneName, String rrule, boolean includeDayOffset) {
+            String timeZoneName, String rrule) {
+        System.out.println(String.format("Recieve %s::%s", startTime, endTime));
+        int gmtOffset;
+        if (timeZoneName != null && TimeZone.getTimeZone(timeZoneName).equals(currentTimezone)) {
+            // For reasons I don't understand it works like this. So if event timezone = UTC, then
+            // its time is correct. If it equals real timezone, we need to add (GMT + N) offset
+            gmtOffset = timeOffset;
+        } else {
+            gmtOffset = 0;
+        }
+        System.out.println(String.format("Offset: %s", gmtOffset));
         if (rrule != null) {
-            if (includeDayOffset) {
-                int[] repetitionDays = getRepetitionDays(rrule);
-                if (arrayContains(repetitionDays, currentWeekday)) {
-                    /*
-                        * If rrule exists, then startTime is at the first day of repetition in current
-                        * week. Therefore, we need to find the difference of days between ours and
-                        * first day to calculate the real time of event.
-                    */
+            int[] repetitionDays = getRepetitionDays(rrule);
+            if (arrayContains(repetitionDays, currentWeekday)) {
+                /*
+                 * If rrule exists, then startTime is at the first day of repetition in current
+                 * week. Therefore, we need to find the difference of days between ours and
+                 * first day to calculate the real time of event.
+                 */
+                if (!(getWeekday(startTime + gmtOffset) == currentWeekday)) {
                     long dayOffset = Math.abs(repetitionDays[0] - currentWeekday);
+                    System.out.println(String.format("Add %s days", dayOffset));
                     startTime += dayOffset * MILLIS_IN_DAY;
                 }
             }
@@ -57,16 +68,15 @@ class TimeConverter {
         if (rfcDuration != null) {
             endTime += convertRfcIntoMillis(rfcDuration) + startTime;
         }
-        if (TimeZone.getTimeZone(timeZoneName).equals(currentTimezone)) {
-             startTime += timeOffset;
-             endTime += timeOffset;
-        }
+        startTime += gmtOffset;
+        endTime += gmtOffset;
+        System.out.println(String.format("Return %s::%s", startTime, endTime));
         return new long[] {startTime, endTime};
     }
     private boolean arrayContains(int[] array, int item) {
         for (int i: array) {
             if (i == item) {
-                System.out.println(item);
+                System.out.println(String.format("Array of days DOES contain today: %s", item));
                 return true;
             }
         }
