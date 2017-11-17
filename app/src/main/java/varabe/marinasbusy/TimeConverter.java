@@ -1,17 +1,25 @@
 package varabe.marinasbusy;
 
+import android.icu.text.SimpleDateFormat;
 import android.icu.util.Calendar;
 import android.icu.util.TimeZone;
+import android.util.Log;
+
+import java.util.Date;
+
+import static varabe.marinasbusy.MainActivity.TAG;
 
 class TimeConverter {
     static final int MILLIS_IN_SECOND = 1000;
     static final int MILLIS_IN_DAY = 86400000;
+    static final boolean D = MainActivity.D;
     static private Calendar weekdayCalendar = Calendar.getInstance();
+    static private SimpleDateFormat timeFormatter = new SimpleDateFormat("HH:mm");
 
     private TimeZone currentTimezone;
     private int currentWeekday;
     private long currentTime;
-    private int timeOffset; // TODO construct offsets depending on the timezone of EVENT
+    private int timeOffset; // TODO construct offsets with Date objects (they can do that)
 
     public TimeZone getCurrentTimezone() {
         return currentTimezone;
@@ -34,7 +42,11 @@ class TimeConverter {
         timeOffset = currentTimezone.getRawOffset();
         currentTime = System.currentTimeMillis() + timeOffset;
         currentWeekday = getWeekday(currentTime);
+        if (D) Log.d(TAG, String.format("Created TimeConverter. Current time: %s", currentTime+""));
 
+    }
+    static String formatTime(long milliseconds) {
+        return timeFormatter.format(new Date(milliseconds));
     }
     long[] getEventTime(
             long startTime, long endTime, String rfcDuration,
@@ -43,6 +55,7 @@ class TimeConverter {
         if (timeZoneName != null && TimeZone.getTimeZone(timeZoneName).equals(currentTimezone)) {
             // For reasons I don't understand it works like this. So if event timezone = UTC, then
             // its time is correct. If it equals real timezone, we need to add (GMT + N) offset
+            // TODO: Replace offsets with Date objects and Date comparisons
             gmtOffset = timeOffset;
         } else {
             gmtOffset = 0;
@@ -64,6 +77,8 @@ class TimeConverter {
         if (rfcDuration != null) {
             endTime += convertRfcIntoMillis(rfcDuration) + startTime;
         }
+        if(D) Log.d(TAG, String.format("STIME:%s::ETIME:%s::TIME:%s-%s",
+                startTime, endTime, ));
         startTime += gmtOffset;
         endTime += gmtOffset;
         return new long[] {startTime, endTime};

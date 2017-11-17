@@ -14,8 +14,8 @@ import android.view.View;
 import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
-    private static final String TAG = "MainActivity";
-    final boolean D = true; // D = Debug
+    public static final String TAG = "Marinasbusy";
+    static final boolean D = true; // D = Debug
     final int REQUEST_READ_CALENDAR = 1;
 
     @Override
@@ -32,14 +32,11 @@ public class MainActivity extends AppCompatActivity {
 
     }
     @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           String permissions[], int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
         switch (requestCode) {
             case REQUEST_READ_CALENDAR: {
                 // If request is cancelled, the result arrays are empty.
-                if (
-                        grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     refreshStatus();
                 }
             }
@@ -69,15 +66,21 @@ public class MainActivity extends AppCompatActivity {
     private void refreshStatus() {
         if (hasPermission(Manifest.permission.READ_CALENDAR)) {
             String status;
-            TextView statusView;
+            String timeBoundaries;
             Event currentEvent = Event.getCurrent(this);
-            statusView = findViewById(R.id.textViewStatus);
+            TextView statusView = findViewById(R.id.textViewStatus);
+            TextView timeView = findViewById(R.id.textViewTime);
             if (currentEvent == null) {
                 status = getString(R.string.free_status);
+                timeBoundaries = "";
             } else {
                 status = getString(R.string.status_phrase) + " " + currentEvent.title;
+                String startTime = TimeConverter.formatTime(currentEvent.startTime);
+                String endTime = TimeConverter.formatTime(currentEvent.endTime);
+                timeBoundaries = String.format("(%s - %s)", startTime, endTime);
             }
             statusView.setText(status);
+//            timeView.setText(timeBoundaries);
         } else {
             ActivityCompat.requestPermissions(
                     this,

@@ -5,6 +5,9 @@ import android.content.ContentResolver;
 import android.database.Cursor;
 import android.provider.CalendarContract.Events;
 import android.support.annotation.Nullable;
+import android.util.Log;
+
+import static varabe.marinasbusy.MainActivity.TAG;
 
 
 class Event {
@@ -50,6 +53,7 @@ class Event {
         Cursor cur = getEventQuery(currentTime, activity);
         while (cur.moveToNext()) {
             title = cur.getString(PROJECTION_TITLE);
+            Log.d(TAG, title);
             long[] eventStartAndEnd = timeConverter.getEventTime(
                 cur.getLong(PROJECTION_DTSTART),
                 cur.getLong(PROJECTION_DTEND),
