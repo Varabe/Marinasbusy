@@ -7,6 +7,9 @@ import android.provider.CalendarContract.Events;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
+import java.util.Date;
+
+import static varabe.marinasbusy.MainActivity.D;
 import static varabe.marinasbusy.MainActivity.TAG;
 
 
@@ -35,21 +38,22 @@ class Event {
             Events.RRULE
     );
     public String title;
-    public long startTime;
-    public long endTime;
+    public Date startDate;
+    public Date endDate;
 
-    public Event(String title, long startTime, long endTime) {
+    public Event(String title, Date startDate, Date endDate) {
         this.title = title;
-        this.startTime = startTime;
-        this.endTime = endTime;
+        this.startDate = startDate;
+        this.endDate = endDate;
     }
     @Nullable
     static Event getCurrent(Activity activity) {
         TimeConverter timeConverter = new TimeConverter();
         long currentTime = timeConverter.getCurrentTime();
+        Date currentDate = new Date();
         String title;
-        long startTime;
-        long endTime;
+        long startTime, endTime;
+        Date startDate, endDate;
         Cursor cur = getEventQuery(currentTime, activity);
         while (cur.moveToNext()) {
             title = cur.getString(PROJECTION_TITLE);
@@ -58,15 +62,17 @@ class Event {
                 cur.getLong(PROJECTION_DTSTART),
                 cur.getLong(PROJECTION_DTEND),
                 cur.getString(PROJECTION_DURATION),
-                cur.getString(PROJECTION_EVENT_TIMEZONE),
                 cur.getString(PROJECTION_EVENT_RRULE)
             );
             startTime = eventStartAndEnd[0];
             endTime = eventStartAndEnd[1];
-            if ((
-                    endTime - startTime < TimeConverter.MILLIS_IN_DAY) &&
-                    ((currentTime >= startTime) && (currentTime <= endTime))) {
-                return new Event(title, startTime, endTime);
+            if (endTime - startTime < TimeConverter.MILLIS_IN_DAY) {
+                startDate = new Date(startTime);
+                endDate = new Date(endTime);
+                if (D) Log.d(TAG, String.format("FINAL TIMES:%s::%s::%s", currentDate, startDate, endDate));
+                if ((currentDate.after(startDate)) && (currentDate.before(endDate))) {
+                    return new Event(title, startDate, endDate);
+                }
             }
         }
         return null;

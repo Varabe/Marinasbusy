@@ -40,68 +40,57 @@ class TimeConverter {
     TimeConverter() {
         currentTimezone = TimeZone.getDefault();
         timeOffset = currentTimezone.getRawOffset();
-        currentTime = System.currentTimeMillis() + timeOffset;
+        currentTime = System.currentTimeMillis();
         currentWeekday = getWeekday(currentTime);
         if (D) Log.d(TAG, String.format("Created TimeConverter. Current time: %s", currentTime+""));
-
     }
-    static String formatTime(long milliseconds) {
-        return timeFormatter.format(new Date(milliseconds));
+    static String formatTime(Date date) {
+        return timeFormatter.format(date);
     }
-    long[] getEventTime(
-            long startTime, long endTime, String rfcDuration,
-            String timeZoneName, String rrule) {
-        int gmtOffset;
-        if (timeZoneName != null && TimeZone.getTimeZone(timeZoneName).equals(currentTimezone)) {
-            // For reasons I don't understand it works like this. So if event timezone = UTC, then
-            // its time is correct. If it equals real timezone, we need to add (GMT + N) offset
-            // TODO: Replace offsets with Date objects and Date comparisons
-            gmtOffset = timeOffset;
-        } else {
-            gmtOffset = 0;
-        }
+    long[] getEventTime(long startTime, long endTime, String rfcDuration, String rrule) {
+        if(D) Log.d(TAG, String.format("(before conversion) STIME:%s::ETIME:%s", startTime, endTime));
         if (rrule != null) {
-            int[] repetitionDays = getRepetitionDays(rrule);
-            if (arrayContains(repetitionDays, currentWeekday)) {
-                /*
-                 * If rrule exists, then startTime is at the first day of repetition in current
-                 * week. Therefore, we need to find the difference of days between ours and
-                 * first day to calculate the real time of event.
-                 */
-                if (!(getWeekday(startTime + gmtOffset) == currentWeekday)) {
-                    long dayOffset = Math.abs(repetitionDays[0] - currentWeekday);
-                    startTime += dayOffset * MILLIS_IN_DAY;
-                }
+            if (D) Log.d(TAG, "RRULE:" + rrule);
+            int lastWeekday = getLastWeekday(rrule, currentWeekday);
+            if(D) Log.d(TAG, lastWeekday+"");
+            /*
+              * If rrule exists, then startTime is at the last day of repetition in current
+              * week. Therefore, we need to find the difference of days between ours and
+              * last day to calculate the real time of event.
+              */
+            if (lastWeekday != 0 && !(getWeekday(startTime + timeOffset) == currentWeekday)) {
+                long dayOffset = Math.abs(lastWeekday - currentWeekday);
+                startTime += dayOffset * MILLIS_IN_DAY;
             }
         }
-        if (rfcDuration != null) {
+        if (rfcDuration != null)
             endTime += convertRfcIntoMillis(rfcDuration) + startTime;
-        }
-        if(D) Log.d(TAG, String.format("STIME:%s::ETIME:%s::TIME:%s-%s",
-                startTime, endTime, ));
-        startTime += gmtOffset;
-        endTime += gmtOffset;
+        if(D) Log.d(TAG, String.format("(after conversion) STIME:%s::ETIME:%s", startTime, endTime));
         return new long[] {startTime, endTime};
     }
-    private boolean arrayContains(int[] array, int item) {
-        for (int i: array) {
-            if (i == item) {
-                return true;
-            }
-        }
-        return false;
-    }
-    private int[] getRepetitionDays(String rrule) {
+    private int getLastWeekday(String rrule, int currentWeekday) {
         // rrule == FREQ=WEEKLY;WKST=MO;BYDAY=MO,WE
+        int weekday, lastWeekday = 0;
         String[] repetitionDaysAsStrings = rrule.split(";")[2].split("=")[1].split(",");
-        int[] repetitionDaysAsInts = new int[repetitionDaysAsStrings.length];
-        for (int i = 0; i < repetitionDaysAsStrings.length; i++) {
-            repetitionDaysAsInts[i] = getWeekday(repetitionDaysAsStrings[i]);
+        for (String weekdayStr: repetitionDaysAsStrings) {
+            weekday = getWeekday(weekdayStr);
+            if (weekday == currentWeekday) {
+                if (lastWeekday == 0) {
+                    return weekday;
+                } else {
+                    return lastWeekday;
+                }
+            }
+            lastWeekday = weekday;
         }
-        return repetitionDaysAsInts;
+        return 0;
     }
     private static int getWeekday(long milliseconds) {
         weekdayCalendar.setTimeInMillis(milliseconds);
+        return weekdayCalendar.get(Calendar.DAY_OF_WEEK);
+    }
+    private static int getWeekday(Date date) {
+        weekdayCalendar.setTime(date);
         return weekdayCalendar.get(Calendar.DAY_OF_WEEK);
     }
     private static int getWeekday(String firstLetters) {

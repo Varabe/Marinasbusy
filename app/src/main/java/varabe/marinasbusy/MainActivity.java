@@ -75,12 +75,12 @@ public class MainActivity extends AppCompatActivity {
                 timeBoundaries = "";
             } else {
                 status = getString(R.string.status_phrase) + " " + currentEvent.title;
-                String startTime = TimeConverter.formatTime(currentEvent.startTime);
-                String endTime = TimeConverter.formatTime(currentEvent.endTime);
-                timeBoundaries = String.format("(%s - %s)", startTime, endTime);
+                timeBoundaries = String.format("(%s - %s)",
+                        TimeConverter.formatTime(currentEvent.startDate),
+                        TimeConverter.formatTime(currentEvent.endDate));
             }
             statusView.setText(status);
-//            timeView.setText(timeBoundaries);
+            timeView.setText(timeBoundaries);
         } else {
             ActivityCompat.requestPermissions(
                     this,
