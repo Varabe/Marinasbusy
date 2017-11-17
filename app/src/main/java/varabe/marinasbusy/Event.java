@@ -6,6 +6,7 @@ import android.database.Cursor;
 import android.provider.CalendarContract.Events;
 import android.support.annotation.Nullable;
 
+
 class Event {
     private static final String[] EVENT_PROJECTION = {
             Events.TITLE,
@@ -30,7 +31,6 @@ class Event {
             Events.DTSTART,
             Events.RRULE
     );
-//    private static final String querySelection = Events.ALL_DAY + " = 0" + " AND (" + Events.RRULE + " is not NULL OR " + Events.DURATION + " is not NULL)";
     public String title;
     public long startTime;
     public long endTime;
@@ -69,10 +69,7 @@ class Event {
     }
     private static Cursor getEventQuery(long currentTime, Activity activity) {
         ContentResolver cr = activity.getContentResolver();
-        String[] selectionArgs = {
-                String.valueOf(currentTime - TimeConverter.MILLIS_IN_DAY)
-        };
-//        String[] selectionArgs = new String[] {};
+        String[] selectionArgs = {String.valueOf(currentTime - TimeConverter.MILLIS_IN_DAY)};
         return cr.query(Events.CONTENT_URI, EVENT_PROJECTION, querySelection, selectionArgs, null);
     }
 }

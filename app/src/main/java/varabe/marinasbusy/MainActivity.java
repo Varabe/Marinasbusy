@@ -23,15 +23,13 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         if(D) Log.d(TAG, "Began execution");
-        if (!hasPermission(Manifest.permission.READ_CALENDAR)) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.READ_CALENDAR}, REQUEST_READ_CALENDAR);
-        } else {
-            refreshStatus();
-        }
+        refreshStatus();
     }
     public boolean hasPermission(String permission) {
         return (ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED);
+    }
+    public void requestPermission(String permission, int permissionCode) {
+
     }
     @Override
     public void onRequestPermissionsResult(int requestCode,
@@ -39,7 +37,8 @@ public class MainActivity extends AppCompatActivity {
         switch (requestCode) {
             case REQUEST_READ_CALENDAR: {
                 // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0
+                if (
+                        grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     refreshStatus();
                 }
@@ -54,9 +53,7 @@ public class MainActivity extends AppCompatActivity {
     }
     public void btnRefreshStatus(View v) {
         if(D) Log.d(TAG, "User pressed btnRefreshStatus");
-        if (hasPermission(Manifest.permission.READ_CALENDAR)) {
-            refreshStatus();
-        }
+        refreshStatus();
     }
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -70,15 +67,22 @@ public class MainActivity extends AppCompatActivity {
         }
     }
     private void refreshStatus() {
-        String status;
-        TextView statusView;
-        Event currentEvent = Event.getCurrent(this);
-        statusView = findViewById(R.id.textViewStatus);
-        if (currentEvent == null) {
-            status = getString(R.string.free_status);
+        if (hasPermission(Manifest.permission.READ_CALENDAR)) {
+            String status;
+            TextView statusView;
+            Event currentEvent = Event.getCurrent(this);
+            statusView = findViewById(R.id.textViewStatus);
+            if (currentEvent == null) {
+                status = getString(R.string.free_status);
+            } else {
+                status = getString(R.string.status_phrase) + " " + currentEvent.title;
+            }
+            statusView.setText(status);
         } else {
-            status = getString(R.string.status_phrase) + " " + currentEvent.title;
+            ActivityCompat.requestPermissions(
+                    this,
+                    new String[] {Manifest.permission.READ_CALENDAR},
+                    REQUEST_READ_CALENDAR);
         }
-        statusView.setText(status);
     }
 }
