@@ -6,6 +6,7 @@ import android.icu.util.TimeZone;
 class TimeConverter {
     static final int MILLIS_IN_SECOND = 1000;
     static final int MILLIS_IN_DAY = 86400000;
+    static private Calendar weekdayCalendar = Calendar.getInstance();
 
     private TimeZone currentTimezone;
     private int currentWeekday;
@@ -85,10 +86,8 @@ class TimeConverter {
         return repetitionDaysAsInts;
     }
     private static int getWeekday(long milliseconds) {
-        // Is used ONLY for single objects due to performance
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTimeInMillis(milliseconds);
-        return calendar.get(Calendar.DAY_OF_WEEK);
+        weekdayCalendar.setTimeInMillis(milliseconds);
+        return weekdayCalendar.get(Calendar.DAY_OF_WEEK);
     }
     private static int getWeekday(String firstLetters) {
         switch (firstLetters) {
