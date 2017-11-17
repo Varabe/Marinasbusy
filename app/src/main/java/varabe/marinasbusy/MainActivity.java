@@ -67,7 +67,7 @@ public class MainActivity extends AppCompatActivity {
         if (hasPermission(Manifest.permission.READ_CALENDAR)) {
             String status;
             String timeBoundaries;
-            Event currentEvent = Event.getCurrent(this);
+            Event currentEvent = EventQuery.getCurrent(this);
             TextView statusView = findViewById(R.id.textViewStatus);
             TextView timeView = findViewById(R.id.textViewTime);
             if (currentEvent == null) {

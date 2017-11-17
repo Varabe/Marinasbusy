@@ -14,6 +14,19 @@ import static varabe.marinasbusy.MainActivity.TAG;
 
 
 class Event {
+    public String title;
+    public Date startDate;
+    public Date endDate;
+
+    public Event(String title, Date startDate, Date endDate) {
+        this.title = title;
+        this.startDate = startDate;
+        this.endDate = endDate;
+    }
+
+}
+
+class EventQuery {
     private static final String[] EVENT_PROJECTION = {
             Events.TITLE,
             Events.DTSTART,
@@ -37,15 +50,6 @@ class Event {
             Events.DTSTART,
             Events.RRULE
     );
-    public String title;
-    public Date startDate;
-    public Date endDate;
-
-    public Event(String title, Date startDate, Date endDate) {
-        this.title = title;
-        this.startDate = startDate;
-        this.endDate = endDate;
-    }
     @Nullable
     static Event getCurrent(Activity activity) {
         TimeConverter timeConverter = new TimeConverter();
@@ -59,10 +63,10 @@ class Event {
             title = cur.getString(PROJECTION_TITLE);
             Log.d(TAG, title);
             long[] eventStartAndEnd = timeConverter.getEventTime(
-                cur.getLong(PROJECTION_DTSTART),
-                cur.getLong(PROJECTION_DTEND),
-                cur.getString(PROJECTION_DURATION),
-                cur.getString(PROJECTION_EVENT_RRULE)
+                    cur.getLong(PROJECTION_DTSTART),
+                    cur.getLong(PROJECTION_DTEND),
+                    cur.getString(PROJECTION_DURATION),
+                    cur.getString(PROJECTION_EVENT_RRULE)
             );
             startTime = eventStartAndEnd[0];
             endTime = eventStartAndEnd[1];

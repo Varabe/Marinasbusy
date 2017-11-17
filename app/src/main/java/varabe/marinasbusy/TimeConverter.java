@@ -120,7 +120,6 @@ class TimeConverter {
         Character unitOfMeasure = rfcTime.charAt(rfcTime.length()-1); // Seconds/Minutes/Hours
         String rfcTimeDigitsOnly = rfcTime.substring(1, rfcTime.length() - 1);
         long duration = Long.parseLong(rfcTimeDigitsOnly);
-        // TODO: Implement a switch statement that will define conversion factor depending on unitOfMeasure
         switch (unitOfMeasure) {
             case 'S':
                 return duration * MILLIS_IN_SECOND;
