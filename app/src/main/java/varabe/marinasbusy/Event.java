@@ -59,7 +59,6 @@ class Event {
             );
             startTime = eventStartAndEnd[0];
             endTime = eventStartAndEnd[1];
-            System.out.println(String.format("%s:::%s::%s::%s", currentTime, title, startTime, endTime));
             if ((
                     endTime - startTime < TimeConverter.MILLIS_IN_DAY) &&
                     ((currentTime >= startTime) && (currentTime <= endTime))) {

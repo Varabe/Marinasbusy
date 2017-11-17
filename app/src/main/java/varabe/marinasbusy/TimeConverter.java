@@ -3,8 +3,6 @@ package varabe.marinasbusy;
 import android.icu.util.Calendar;
 import android.icu.util.TimeZone;
 
-import java.util.Arrays;
-
 class TimeConverter {
     static final int MILLIS_IN_SECOND = 1000;
     static final int MILLIS_IN_DAY = 86400000;
@@ -40,7 +38,6 @@ class TimeConverter {
     long[] getEventTime(
             long startTime, long endTime, String rfcDuration,
             String timeZoneName, String rrule) {
-        System.out.println(String.format("Recieve %s::%s", startTime, endTime));
         int gmtOffset;
         if (timeZoneName != null && TimeZone.getTimeZone(timeZoneName).equals(currentTimezone)) {
             // For reasons I don't understand it works like this. So if event timezone = UTC, then
@@ -49,7 +46,6 @@ class TimeConverter {
         } else {
             gmtOffset = 0;
         }
-        System.out.println(String.format("Offset: %s", gmtOffset));
         if (rrule != null) {
             int[] repetitionDays = getRepetitionDays(rrule);
             if (arrayContains(repetitionDays, currentWeekday)) {
@@ -60,7 +56,6 @@ class TimeConverter {
                  */
                 if (!(getWeekday(startTime + gmtOffset) == currentWeekday)) {
                     long dayOffset = Math.abs(repetitionDays[0] - currentWeekday);
-                    System.out.println(String.format("Add %s days", dayOffset));
                     startTime += dayOffset * MILLIS_IN_DAY;
                 }
             }
@@ -70,13 +65,11 @@ class TimeConverter {
         }
         startTime += gmtOffset;
         endTime += gmtOffset;
-        System.out.println(String.format("Return %s::%s", startTime, endTime));
         return new long[] {startTime, endTime};
     }
     private boolean arrayContains(int[] array, int item) {
         for (int i: array) {
             if (i == item) {
-                System.out.println(String.format("Array of days DOES contain today: %s", item));
                 return true;
             }
         }
