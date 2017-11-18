@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">Marina\'s busy</string>
     <string name="free_status">She\'s free, boi</string>
-    <string name="connect_calendar_label">Connect calendar</string>
     <string name="refresh_label">Refresh</string>
     <string name="status_phrase">She\'s on</string>
+    <string name="settings_label">Settings</string>
 </resources>

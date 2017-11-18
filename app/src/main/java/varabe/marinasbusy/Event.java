@@ -18,7 +18,7 @@ class Event {
     public Date startDate;
     public Date endDate;
 
-    public Event(String title, Date startDate, Date endDate) {
+    Event(String title, Date startDate, Date endDate) {
         this.title = title;
         this.startDate = startDate;
         this.endDate = endDate;
@@ -58,10 +58,10 @@ class EventQuery {
         String title;
         long startTime, endTime;
         Date startDate, endDate;
-        Cursor cur = getEventQuery(currentTime, activity);
+        Cursor cur = getQuery(currentTime, activity);
         while (cur.moveToNext()) {
             title = cur.getString(PROJECTION_TITLE);
-            Log.d(TAG, title);
+            Log.d(TAG, String.valueOf(title));
             long[] eventStartAndEnd = timeConverter.getEventTime(
                     cur.getLong(PROJECTION_DTSTART),
                     cur.getLong(PROJECTION_DTEND),
@@ -81,7 +81,7 @@ class EventQuery {
         }
         return null;
     }
-    private static Cursor getEventQuery(long currentTime, Activity activity) {
+    private static Cursor getQuery(long currentTime, Activity activity) {
         ContentResolver cr = activity.getContentResolver();
         String[] selectionArgs = {String.valueOf(currentTime - TimeConverter.MILLIS_IN_DAY)};
         return cr.query(Events.CONTENT_URI, EVENT_PROJECTION, querySelection, selectionArgs, null);

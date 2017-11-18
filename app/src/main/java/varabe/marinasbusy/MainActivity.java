@@ -1,6 +1,7 @@
 package varabe.marinasbusy;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
@@ -13,6 +14,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
 
+import java.util.List;
+
 public class MainActivity extends AppCompatActivity {
     public static final String TAG = "Marinasbusy";
     static final boolean D = true; // D = Debug
@@ -23,13 +26,15 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         if(D) Log.d(TAG, "Began execution");
+        checkSettings();
         refreshStatus();
+        List<Calendar> calendars = CalendarQuery.getCalendars(this);
+        for(Calendar c: calendars) {
+            Log.d(TAG, String.format("%s::%s::%s", c.id, c.name, c.color));
+        }
     }
     public boolean hasPermission(String permission) {
         return (ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED);
-    }
-    public void requestPermission(String permission, int permissionCode) {
-
     }
     @Override
     public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
@@ -56,12 +61,16 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle item selection
         switch (item.getItemId()) {
-            case R.id.btnConnectCalendar:
-//                connectCalendar(findViewById(R.id.btnConnectCalendar));
+            case R.id.btnSettings:
+                goToSettings();
                 return true;
             default:
                 return false;
         }
+    }
+    private void goToSettings() {
+        Intent settingsIntent = new Intent(this, SettingsActivity.class);
+        startActivity(settingsIntent);
     }
     private void refreshStatus() {
         if (hasPermission(Manifest.permission.READ_CALENDAR)) {
@@ -87,5 +96,8 @@ public class MainActivity extends AppCompatActivity {
                     new String[] {Manifest.permission.READ_CALENDAR},
                     REQUEST_READ_CALENDAR);
         }
+    }
+    private void checkSettings() {
+        // TODO: Implement the method to check them using Shared Preferences, and create, if needed
     }
 }

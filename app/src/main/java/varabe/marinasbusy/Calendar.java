@@ -1,39 +1,52 @@
-//package varabe.marinasbusy;
-//
-//import android.provider.CalendarContract;
-//
-//import java.util.List;
-//
-//class Calendar {
-//    private static final String[] CALENDAR_PROJECTION = new String[] {
-//            Calendars._ID,
-//            Calendars.CALENDAR_DISPLAY_NAME,
-//            CalendarContract.Calendars.CALENDAR_COLOR,
-//    };
-//    // The indices for the projection array above.
-//    private static final int PROJECTION_ID_INDEX = 0;
-//    private static final int PROJECTION_DISPLAY_NAME_INDEX = 1;
-//    private static final int PROJECTION_COLOR_INDEX = 2;
-//
-//    private List<Calendar> getCalendars() {
-//        int id, color;
-//        String name;
-//        Cursor cur = getCalendarQuery();
-//        List<Calendar> calendars = new ArrayList<Calendar>();
-//        while (cur.moveToNext()) {
-//            id = cur.getInt(PROJECTION_ID_INDEX);
-//            name = cur.getString(PROJECTION_DISPLAY_NAME_INDEX);
-//            color = cur.getInt(PROJECTION_COLOR_INDEX);
-//            calendars.add(new Calendar(id, name, color));
-//        }
-//        return calendars;
-//    }
-//
-//    private Cursor getCalendarQuery() {
-//        ContentResolver cr = getContentResolver();
-//        Uri uri = Calendars.CONTENT_URI;
-//        String selection = String.format("%s is not NULL", Calendars._ID);
-//        String[] selectionArgs = new String[]{};
-//        return cr.query(uri, CALENDAR_PROJECTION, selection, selectionArgs, null);
-//    }
-//}
+package varabe.marinasbusy;
+
+import android.app.Activity;
+import android.content.ContentResolver;
+import android.database.Cursor;
+import android.net.Uri;
+import android.provider.CalendarContract.Calendars;
+import android.provider.CalendarContract;
+
+import java.util.ArrayList;
+import java.util.List;
+
+class Calendar {
+    public int id, color;
+    public String name;
+    Calendar(int id, String name, int color) {
+        this.id = id;
+        this.name = name;
+        this.color = color;
+    }
+
+}
+
+class CalendarQuery {
+    private static final String[] CALENDAR_PROJECTION = new String[] {
+            Calendars._ID,
+            Calendars.CALENDAR_DISPLAY_NAME,
+            CalendarContract.Calendars.CALENDAR_COLOR,
+    };
+    private static final int PROJECTION_ID_INDEX = 0;
+    private static final int PROJECTION_DISPLAY_NAME_INDEX = 1;
+    private static final int PROJECTION_COLOR_INDEX = 2;
+
+    static List<Calendar> getCalendars(Activity activity) {
+        int id, color;
+        String name;
+        Cursor cur = getQuery(activity);
+        List<Calendar> calendars = new ArrayList<>();
+        while (cur.moveToNext()) {
+            id = cur.getInt(PROJECTION_ID_INDEX);
+            name = cur.getString(PROJECTION_DISPLAY_NAME_INDEX);
+            color = cur.getInt(PROJECTION_COLOR_INDEX);
+            calendars.add(new Calendar(id, name, color));
+        }
+        return calendars;
+    }
+    private static Cursor getQuery(Activity activity) {
+        ContentResolver cr = activity.getContentResolver();
+        Uri uri = Calendars.CONTENT_URI;
+        return cr.query(uri, CALENDAR_PROJECTION, null, null, null);
+    }
+}
