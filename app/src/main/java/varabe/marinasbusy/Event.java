@@ -3,29 +3,72 @@ package varabe.marinasbusy;
 import android.app.Activity;
 import android.content.ContentResolver;
 import android.database.Cursor;
+import android.icu.text.SimpleDateFormat;
 import android.provider.CalendarContract.Events;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
+import java.util.Calendar;
 import java.util.Date;
+import java.util.Locale;
 
 import static varabe.marinasbusy.MainActivity.D;
 import static varabe.marinasbusy.MainActivity.TAG;
 
 
 class Event {
-    public String title;
-    public Date startDate;
-    public Date endDate;
-
-    Event(String title, Date startDate, Date endDate) {
+    private String title;
+    private Time startTime;
+    private Time endTime;
+    private int[] weekdays;
+    private int weekday = 0;
+    Event(String title, long startTime, long endTime, String durationStr, String rrule) {
+        if (D) Log.d(TAG, "-- Creating Event. Title: " + title);
+        long duration = TimeUtils.convertRfcIntoMillis(durationStr);
         this.title = title;
-        this.startDate = startDate;
-        this.endDate = endDate;
+        if (rrule != null)
+            this.weekdays = TimeUtils.getWeekdays(rrule);
+        else
+            this.weekday = TimeUtils.getWeekday(startTime);
+        if (endTime == 0) {
+            endTime = startTime + duration;
+            if (D) Log.d(TAG, "StartTime: "+startTime+", EndTime:"+endTime);
+        }
+        this.startTime = new Time(startTime);
+        this.endTime = new Time(endTime);
     }
-
+    public boolean isDuring(long time, int weekday) {
+        if (D) Log.d(TAG, String.format("isAtWeekday:%s, isAtTime:%s",
+                isAtWeekday(weekday)+"",
+                isAtTime(time)+""));
+        return isAtWeekday(weekday) && isAtTime(time);
+    }
+    public String getTitle() {
+        return title;
+    }
+    public long getDuration() {
+        return endTime.getLongRepresentation() - startTime.getLongRepresentation();
+    }
+    public String getFormatTime() {
+        return String.format("(%s - %s)", startTime, endTime);
+    }
+    private boolean isAtWeekday(int weekday) {
+        if (this.weekday != 0)
+            return this.weekday == weekday;
+        else {
+            for (int w: this.weekdays) {
+                if (w == weekday)
+                    return true;
+            }
+        }
+        return false;
+    }
+    private boolean isAtTime(long timeInMilliseconds) {
+        Time time = new Time(timeInMilliseconds);
+        if (D) Log.d(TAG, String.format("TIME:%s, startTime:%s, endTime:%s", time, startTime, endTime));
+        return (time.isAfter(this.startTime) && time.isBefore(endTime));
+    }
 }
-
 class EventQuery {
     private static final String[] EVENT_PROJECTION = {
             Events.TITLE,
@@ -52,30 +95,22 @@ class EventQuery {
     );
     @Nullable
     static Event getCurrent(Activity activity) {
-        TimeConverter timeConverter = new TimeConverter();
-        long currentTime = timeConverter.getCurrentTime();
-        Date currentDate = new Date();
-        String title;
-        long startTime, endTime;
-        Date startDate, endDate;
+        Event event;
+        long currentTime = System.currentTimeMillis();
+        int currentWeekday = TimeUtils.getWeekday(currentTime);
+        if (D) Log.d(TAG, "Current Weekday:"+currentWeekday);
         Cursor cur = getQuery(currentTime, activity);
         while (cur.moveToNext()) {
-            title = cur.getString(PROJECTION_TITLE);
-            Log.d(TAG, String.valueOf(title));
-            long[] eventStartAndEnd = timeConverter.getEventTime(
+            event = new Event(
+                    cur.getString(PROJECTION_TITLE),
                     cur.getLong(PROJECTION_DTSTART),
                     cur.getLong(PROJECTION_DTEND),
                     cur.getString(PROJECTION_DURATION),
                     cur.getString(PROJECTION_EVENT_RRULE)
             );
-            startTime = eventStartAndEnd[0];
-            endTime = eventStartAndEnd[1];
-            if (endTime - startTime < TimeConverter.MILLIS_IN_DAY) {
-                startDate = new Date(startTime);
-                endDate = new Date(endTime);
-                if (D) Log.d(TAG, String.format("FINAL TIMES:%s::%s::%s", currentDate, startDate, endDate));
-                if ((currentDate.after(startDate)) && (currentDate.before(endDate))) {
-                    return new Event(title, startDate, endDate);
+            if (event.getDuration() < TimeUtils.MILLIS_IN_DAY) {
+                if (event.isDuring(currentTime, currentWeekday)) {
+                    return event;
                 }
             }
         }
@@ -83,7 +118,106 @@ class EventQuery {
     }
     private static Cursor getQuery(long currentTime, Activity activity) {
         ContentResolver cr = activity.getContentResolver();
-        String[] selectionArgs = {String.valueOf(currentTime - TimeConverter.MILLIS_IN_DAY)};
+        String[] selectionArgs = {String.valueOf(currentTime - TimeUtils.MILLIS_IN_DAY)};
         return cr.query(Events.CONTENT_URI, EVENT_PROJECTION, querySelection, selectionArgs, null);
+    }
+}
+class TimeUtils {
+    static final int MILLIS_IN_DAY = 86400000;
+    private static final int MILLIS_IN_SECOND = 1000;
+    private static Calendar weekdayCalendar = Calendar.getInstance();
+    static SimpleDateFormat formatter = new SimpleDateFormat("HH:mm");
+
+    static Date getDefaultTime(long millis) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(millis);
+        calendar.set(Calendar.DAY_OF_MONTH, 8);
+        calendar.set(Calendar.MONTH, 2);
+        calendar.set(Calendar.YEAR, 5);
+        return calendar.getTime();
+
+    }
+    static int[] getWeekdays(String rrule) {
+        if (D) Log.d(TAG, "getWeekdays()...");
+        int weekday = 0;
+        String[] stringRepetitionDays = rrule.split(";")[2].split("=")[1].split(",");
+        int[] intRepetitionDays = new int[stringRepetitionDays.length];
+        for (int i = 0; i < stringRepetitionDays.length; i++) {
+            weekday = getWeekday(stringRepetitionDays[i]);
+            Log.d(TAG, weekday + "");
+            intRepetitionDays[i] = weekday;
+        }
+        return intRepetitionDays;
+    }
+    private static int getWeekday(String firstLetters) {
+        switch (firstLetters) {
+            case "MO":
+                return Calendar.MONDAY;
+            case "TU":
+                return Calendar.TUESDAY;
+            case "WE":
+                return Calendar.WEDNESDAY;
+            case "TH":
+                return Calendar.THURSDAY;
+            case "FR":
+                return Calendar.FRIDAY;
+            case "SA":
+                return Calendar.SATURDAY;
+            case "SU":
+                return Calendar.SUNDAY;
+            default:
+                return 0;
+        }
+    }
+    static int getWeekday(long milliseconds) {
+        weekdayCalendar.setTimeInMillis(milliseconds);
+        return weekdayCalendar.get(Calendar.DAY_OF_WEEK);
+    }
+    static long convertRfcIntoMillis(String rfcTime) throws UnsupportedOperationException {
+        if (rfcTime == null) {
+            return 0;
+        }
+        Character unitOfMeasure = rfcTime.charAt(rfcTime.length()-1); // Seconds/Minutes/Hours
+        String rfcTimeDigitsOnly = rfcTime.substring(1, rfcTime.length() - 1);
+        long duration = Long.parseLong(rfcTimeDigitsOnly);
+        switch (unitOfMeasure) {
+            case 'S':
+                return duration * MILLIS_IN_SECOND;
+            default:
+                throw new UnsupportedOperationException(
+                        "This method can only be used when RFC is in seconds. RFC: " + rfcTime);
+        }
+    }
+}
+
+class Time {
+    // Produces a bug if event starts and ends on different days
+    private int hours;
+    private int minutes;
+    private int seconds;
+    private static int SECONDS_IN_HOUR = 3600;
+    private static int SECONDS_IN_MINUTE = 60;
+
+    Time(long milliseconds) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(milliseconds);
+        hours = calendar.get(Calendar.HOUR_OF_DAY);
+        minutes = calendar.get(Calendar.MINUTE);
+        seconds = calendar.get(Calendar.SECOND);
+    }
+    public String toString() {
+        String minutes = this.minutes + "";
+        if (minutes.length() < 2)
+            minutes = "0" + minutes;
+        return String.format("%s:%s", hours+"", minutes);
+    }
+    boolean isAfter(Time time) {
+        return getLongRepresentation() > time.getLongRepresentation();
+    }
+    boolean isBefore(Time time) {
+        return getLongRepresentation() < time.getLongRepresentation();
+    }
+    long getLongRepresentation() {
+        return (hours * SECONDS_IN_HOUR) + (minutes * SECONDS_IN_MINUTE) + seconds;
     }
 }

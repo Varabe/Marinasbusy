@@ -25,13 +25,13 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        if(D) Log.d(TAG, "Began execution");
+        if (D) Log.d(TAG, "Began execution");
+    }
+    @Override
+    protected void onResume() {
+        super.onResume();
         checkSettings();
         refreshStatus();
-        List<Calendar> calendars = CalendarQuery.getCalendars(this);
-        for(Calendar c: calendars) {
-            Log.d(TAG, String.format("%s::%s::%s", c.id, c.name, c.color));
-        }
     }
     public boolean hasPermission(String permission) {
         return (ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED);
@@ -75,21 +75,19 @@ public class MainActivity extends AppCompatActivity {
     private void refreshStatus() {
         if (hasPermission(Manifest.permission.READ_CALENDAR)) {
             String status;
-            String timeBoundaries;
+            String formatTime;
             Event currentEvent = EventQuery.getCurrent(this);
             TextView statusView = findViewById(R.id.textViewStatus);
             TextView timeView = findViewById(R.id.textViewTime);
             if (currentEvent == null) {
                 status = getString(R.string.free_status);
-                timeBoundaries = "";
+                formatTime = "";
             } else {
-                status = getString(R.string.status_phrase) + " " + currentEvent.title;
-                timeBoundaries = String.format("(%s - %s)",
-                        TimeConverter.formatTime(currentEvent.startDate),
-                        TimeConverter.formatTime(currentEvent.endDate));
+                status = getString(R.string.status_phrase) + " " + currentEvent.getTitle();
+                formatTime = currentEvent.getFormatTime();
             }
             statusView.setText(status);
-            timeView.setText(timeBoundaries);
+            timeView.setText(formatTime);
         } else {
             ActivityCompat.requestPermissions(
                     this,
