@@ -1,7 +1,9 @@
 package varabe.marinasbusy;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
@@ -15,11 +17,13 @@ import android.view.View;
 import android.widget.TextView;
 
 import java.util.List;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
-    public static final String TAG = "Marinasbusy";
+    static final String TAG = "Marinasbusy";
     static final boolean D = true; // D = Debug
-    final int REQUEST_READ_CALENDAR = 1;
+    static final int REQUEST_READ_CALENDAR = 1;
+    static final String CALENDAR_PREFERENCES = "calendars";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,6 +100,15 @@ public class MainActivity extends AppCompatActivity {
         }
     }
     private void checkSettings() {
-        // TODO: Implement the method to check them using Shared Preferences, and create, if needed
+        SharedPreferences prefs = getSharedPreferences(CALENDAR_PREFERENCES, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        Map allPrefs = prefs.getAll();
+        List<Calendar> calendars = CalendarQuery.getCalendars(this);
+        for(Calendar c: calendars) {
+            if (!allPrefs.containsKey(c.id + ""))
+                editor.putBoolean(c.id+"", true);
+
+        }
+        editor.apply();
     }
 }

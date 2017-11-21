@@ -2,6 +2,7 @@ package varabe.marinasbusy;
 
 import android.app.Activity;
 import android.content.ContentResolver;
+import android.content.Context;
 import android.database.Cursor;
 import android.icu.text.SimpleDateFormat;
 import android.provider.CalendarContract.Events;
@@ -10,8 +11,9 @@ import android.util.Log;
 
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Locale;
+import java.util.Map;
 
+import static varabe.marinasbusy.MainActivity.CALENDAR_PREFERENCES;
 import static varabe.marinasbusy.MainActivity.D;
 import static varabe.marinasbusy.MainActivity.TAG;
 
@@ -85,7 +87,7 @@ class EventQuery {
             PROJECTION_DURATION = 3,
             PROJECTION_EVENT_TIMEZONE = 4,
             PROJECTION_EVENT_RRULE = 5;
-    private static final String querySelection = String.format(
+    private static final String querySelectionTemplate = String.format(
             "%s = %s AND %s = 0 AND ((%s > ?) OR (%s IS NOT NULL))",
             Events.AVAILABILITY,
             Events.AVAILABILITY_BUSY,
@@ -119,7 +121,28 @@ class EventQuery {
     private static Cursor getQuery(long currentTime, Activity activity) {
         ContentResolver cr = activity.getContentResolver();
         String[] selectionArgs = {String.valueOf(currentTime - TimeUtils.MILLIS_IN_DAY)};
+        String querySelection = querySelectionTemplate + getQuerySelectionArgs(activity);
+        if (D) Log.d(TAG, "QuerySelection:" + querySelection);
         return cr.query(Events.CONTENT_URI, EVENT_PROJECTION, querySelection, selectionArgs, null);
+    }
+    private static String getQuerySelectionArgs(Activity activity) {
+        String formattedSqlSelection = " AND (";
+        String OR = " OR ";
+        int INITIAL_LENGTH = formattedSqlSelection.length();
+        Map<String, ?> prefsDict = activity.getSharedPreferences(
+                CALENDAR_PREFERENCES,
+                Context.MODE_PRIVATE).getAll();
+        for (Map.Entry<String, ?> entry: prefsDict.entrySet()) {
+            if (entry.getValue().toString().equals("true")) {
+                formattedSqlSelection += Events.CALENDAR_ID + "=" + entry.getKey() + OR;
+            }
+        }
+        if(formattedSqlSelection.length() == INITIAL_LENGTH) {
+            return "";
+        }
+        else {
+            return formattedSqlSelection.substring(0, formattedSqlSelection.length() - OR.length()) + ")";
+        }
     }
 }
 class TimeUtils {
@@ -138,13 +161,11 @@ class TimeUtils {
 
     }
     static int[] getWeekdays(String rrule) {
-        if (D) Log.d(TAG, "getWeekdays()...");
         int weekday = 0;
         String[] stringRepetitionDays = rrule.split(";")[2].split("=")[1].split(",");
         int[] intRepetitionDays = new int[stringRepetitionDays.length];
         for (int i = 0; i < stringRepetitionDays.length; i++) {
             weekday = getWeekday(stringRepetitionDays[i]);
-            Log.d(TAG, weekday + "");
             intRepetitionDays[i] = weekday;
         }
         return intRepetitionDays;

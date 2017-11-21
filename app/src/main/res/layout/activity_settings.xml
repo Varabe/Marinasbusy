@@ -6,4 +6,10 @@
     android:layout_height="match_parent"
     tools:context="varabe.marinasbusy.SettingsActivity">
 
+    <ListView
+        android:id="@+id/calendarListView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" >
+
+    </ListView>
 </android.support.constraint.ConstraintLayout>
