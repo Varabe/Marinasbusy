@@ -126,7 +126,8 @@ class EventQuery {
                 CALENDAR_PREFERENCES,
                 Context.MODE_PRIVATE).getAll();
         for (Map.Entry<String, ?> entry: prefsDict.entrySet()) {
-            if (entry.getValue().toString().equals("true")) {
+            Boolean value = (Boolean) entry.getValue();
+            if (!value) {
                 formattedSqlSelection += Events.CALENDAR_ID + "!=" + entry.getKey() + AND;
             }
         }
