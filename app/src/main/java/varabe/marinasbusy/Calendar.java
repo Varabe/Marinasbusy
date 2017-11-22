@@ -11,12 +11,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 class Calendar {
-    public int id, color;
+    public int id, color, colorKey;
     public String name;
-    Calendar(int id, String name, int color) {
+    Calendar(int id, String name, int color, int colorKey) {
         this.id = id;
         this.name = name;
         this.color = color;
+        this.colorKey = colorKey;
     }
 
 }
@@ -25,14 +26,16 @@ class CalendarQuery {
     private static final String[] CALENDAR_PROJECTION = new String[] {
             Calendars._ID,
             Calendars.CALENDAR_DISPLAY_NAME,
-            CalendarContract.Calendars.CALENDAR_COLOR,
+            Calendars.CALENDAR_COLOR,
+            Calendars.CALENDAR_COLOR_KEY
     };
     private static final int PROJECTION_ID_INDEX = 0;
     private static final int PROJECTION_DISPLAY_NAME_INDEX = 1;
     private static final int PROJECTION_COLOR_INDEX = 2;
+    private static final int PROJECTION_COLOR_KEY_INDEX = 3;
 
     static List<Calendar> getCalendars(Activity activity) {
-        int id, color;
+        int id, color, colorKey;
         String name;
         Cursor cur = getQuery(activity);
         List<Calendar> calendars = new ArrayList<>();
@@ -40,7 +43,8 @@ class CalendarQuery {
             id = cur.getInt(PROJECTION_ID_INDEX);
             name = cur.getString(PROJECTION_DISPLAY_NAME_INDEX);
             color = cur.getInt(PROJECTION_COLOR_INDEX);
-            calendars.add(new Calendar(id, name, color));
+            colorKey = cur.getInt(PROJECTION_COLOR_KEY_INDEX);
+            calendars.add(new Calendar(id, name, color, colorKey));
         }
         return calendars;
     }

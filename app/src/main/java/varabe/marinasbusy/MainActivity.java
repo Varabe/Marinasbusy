@@ -107,7 +107,6 @@ public class MainActivity extends AppCompatActivity {
         for(Calendar c: calendars) {
             if (!allPrefs.containsKey(c.id + ""))
                 editor.putBoolean(c.id+"", true);
-
         }
         editor.apply();
     }

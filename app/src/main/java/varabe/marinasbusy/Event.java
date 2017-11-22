@@ -25,7 +25,6 @@ class Event {
     private int[] weekdays;
     private int weekday = 0;
     Event(String title, long startTime, long endTime, String durationStr, String rrule) {
-        if (D) Log.d(TAG, "-- Creating Event. Title: " + title);
         long duration = TimeUtils.convertRfcIntoMillis(durationStr);
         this.title = title;
         if (rrule != null)
@@ -34,15 +33,11 @@ class Event {
             this.weekday = TimeUtils.getWeekday(startTime);
         if (endTime == 0) {
             endTime = startTime + duration;
-            if (D) Log.d(TAG, "StartTime: "+startTime+", EndTime:"+endTime);
         }
         this.startTime = new Time(startTime);
         this.endTime = new Time(endTime);
     }
     public boolean isDuring(long time, int weekday) {
-        if (D) Log.d(TAG, String.format("isAtWeekday:%s, isAtTime:%s",
-                isAtWeekday(weekday)+"",
-                isAtTime(time)+""));
         return isAtWeekday(weekday) && isAtTime(time);
     }
     public String getTitle() {
@@ -67,7 +62,6 @@ class Event {
     }
     private boolean isAtTime(long timeInMilliseconds) {
         Time time = new Time(timeInMilliseconds);
-        if (D) Log.d(TAG, String.format("TIME:%s, startTime:%s, endTime:%s", time, startTime, endTime));
         return (time.isAfter(this.startTime) && time.isBefore(endTime));
     }
 }
@@ -100,7 +94,6 @@ class EventQuery {
         Event event;
         long currentTime = System.currentTimeMillis();
         int currentWeekday = TimeUtils.getWeekday(currentTime);
-        if (D) Log.d(TAG, "Current Weekday:"+currentWeekday);
         Cursor cur = getQuery(currentTime, activity);
         while (cur.moveToNext()) {
             event = new Event(
@@ -127,21 +120,21 @@ class EventQuery {
     }
     private static String getQuerySelectionArgs(Activity activity) {
         String formattedSqlSelection = " AND (";
-        String OR = " OR ";
+        String AND = " AND ";
         int INITIAL_LENGTH = formattedSqlSelection.length();
         Map<String, ?> prefsDict = activity.getSharedPreferences(
                 CALENDAR_PREFERENCES,
                 Context.MODE_PRIVATE).getAll();
         for (Map.Entry<String, ?> entry: prefsDict.entrySet()) {
             if (entry.getValue().toString().equals("true")) {
-                formattedSqlSelection += Events.CALENDAR_ID + "=" + entry.getKey() + OR;
+                formattedSqlSelection += Events.CALENDAR_ID + "!=" + entry.getKey() + AND;
             }
         }
         if(formattedSqlSelection.length() == INITIAL_LENGTH) {
             return "";
         }
         else {
-            return formattedSqlSelection.substring(0, formattedSqlSelection.length() - OR.length()) + ")";
+            return formattedSqlSelection.substring(0, formattedSqlSelection.length() - AND.length()) + ")";
         }
     }
 }

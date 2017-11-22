@@ -1,12 +1,17 @@
 package varabe.marinasbusy;
 
-import android.support.v7.app.AppCompatActivity;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
+import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.CheckBox;
 import android.widget.ListView;
-import android.widget.SimpleCursorAdapter;
 
 import java.util.List;
+
+import static varabe.marinasbusy.MainActivity.CALENDAR_PREFERENCES;
 
 public class SettingsActivity extends AppCompatActivity {
     @Override
@@ -15,15 +20,18 @@ public class SettingsActivity extends AppCompatActivity {
         setContentView(R.layout.activity_settings);
         getSupportActionBar().setTitle(getString(R.string.settings_label));
         populateList((ListView) findViewById(R.id.calendarListView));
-
     }
     void populateList(ListView calendarListView) {
         List<Calendar> calendars = CalendarQuery.getCalendars(this);
-        String[] calendarTitles = new String[calendars.size()];
-        for(int i = 0; i < calendars.size(); i++) {
-            calendarTitles[i] = calendars.get(i).name;
-        }
-        ArrayAdapter adapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1, calendarTitles);
+        SharedPreferences prefs = getSharedPreferences(CALENDAR_PREFERENCES, Context.MODE_PRIVATE);
+        ArrayAdapter adapter = new CalendarAdapter(this, 0, calendars, prefs.getAll());
         calendarListView.setAdapter(adapter);
+    }
+    public void onCheckBoxClicked(View view) {
+        CheckBox box = (CheckBox) view;
+        SharedPreferences prefs = getSharedPreferences(CALENDAR_PREFERENCES, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putBoolean(box.getId()+"", box.isChecked());
+        editor.apply();
     }
 }
