@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -34,19 +35,18 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        checkSettings();
-        refreshStatus();
-    }
-    public boolean hasPermission(String permission) {
-        return (ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED);
+        if (checkPermission(Manifest.permission.READ_CALENDAR, REQUEST_READ_CALENDAR)) {
+            checkSettings();
+            refreshStatus();
+        }
     }
     @Override
-    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
         switch (requestCode) {
             case REQUEST_READ_CALENDAR: {
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    refreshStatus();
+                    onResume();
                 }
             }
         }
@@ -57,13 +57,8 @@ public class MainActivity extends AppCompatActivity {
         inflater.inflate(R.menu.main_menu, menu);
         return true;
     }
-    public void btnRefreshStatus(View v) {
-        if(D) Log.d(TAG, "User pressed btnRefreshStatus");
-        refreshStatus();
-    }
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle item selection
         switch (item.getItemId()) {
             case R.id.btnSettings:
                 goToSettings();
@@ -72,32 +67,42 @@ public class MainActivity extends AppCompatActivity {
                 return false;
         }
     }
+    public void btnRefreshStatus(View v) {
+        if(D) Log.d(TAG, "User pressed btnRefreshStatus");
+        refreshStatus();
+    }
+    private boolean checkPermission(String permission, int requestCode) {
+        if (hasPermission(permission))
+            return true;
+        else {
+            ActivityCompat.requestPermissions(this, new String[] {permission}, requestCode);
+            return false;
+        }
+    }
+    private boolean hasPermission(String permission) {
+        return ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED;
+    }
     private void goToSettings() {
         Intent settingsIntent = new Intent(this, SettingsActivity.class);
         startActivity(settingsIntent);
     }
     private void refreshStatus() {
-        if (hasPermission(Manifest.permission.READ_CALENDAR)) {
-            String status;
-            String formatTime;
-            Event currentEvent = EventQuery.getCurrent(this);
-            TextView statusView = findViewById(R.id.textViewStatus);
-            TextView timeView = findViewById(R.id.textViewTime);
-            if (currentEvent == null) {
-                status = getString(R.string.free_status);
-                formatTime = "";
-            } else {
-                status = getString(R.string.status_phrase) + " " + currentEvent.getTitle();
-                formatTime = currentEvent.getFormatTime();
-            }
-            statusView.setText(status);
-            timeView.setText(formatTime);
+        String time, status;
+        Event currentEvent = EventQuery.getCurrent(this);
+        if (currentEvent == null) {
+            status = getString(R.string.free_status);
+            time = "";
         } else {
-            ActivityCompat.requestPermissions(
-                    this,
-                    new String[] {Manifest.permission.READ_CALENDAR},
-                    REQUEST_READ_CALENDAR);
+            status = getString(R.string.status_phrase) + " " + currentEvent.getTitle();
+            time = currentEvent.getFormatTime();
         }
+        setNewStatus(status, time);
+    }
+    private void setNewStatus(String status, String time) {
+        TextView statusView = findViewById(R.id.textViewStatus);
+        TextView timeView = findViewById(R.id.textViewTime);
+        statusView.setText(status);
+        timeView.setText(time);
     }
     private void checkSettings() {
         SharedPreferences prefs = getSharedPreferences(CALENDAR_PREFERENCES, Context.MODE_PRIVATE);
