@@ -1,6 +1,7 @@
 package varabe.marinasbusy;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.support.annotation.NonNull;
 import android.util.Log;
@@ -19,16 +20,15 @@ import static varabe.marinasbusy.MainActivity.TAG;
 
 public class CalendarAdapter extends ArrayAdapter<List<Calendar>> {
 
-    private HashMap<String, Boolean> allStates;
+    private SharedPreferences prefs;
     private List<Calendar> items;
     private Context context;
 
-    CalendarAdapter(@NonNull Context context, int resource, List<Calendar> items, Map allStates) {
+    CalendarAdapter(@NonNull Context context, int resource, List<Calendar> items, SharedPreferences prefs) {
         super(context, resource);
         this.context = context;
         this.items = items;
-        if (D) Log.d(TAG, allStates+"");
-        this.allStates = (HashMap<String, Boolean>) allStates;
+        this.prefs = prefs;
     }
 
     public int getCount() {
@@ -45,7 +45,8 @@ public class CalendarAdapter extends ArrayAdapter<List<Calendar>> {
         ColorStateList color = ColorStateList.valueOf(cal.color);
         box.setButtonTintList(color);
         box.setId(cal.id);
-        box.setChecked(allStates.get(cal.id+""));
+        HashMap<String, Boolean> calendarStates = (HashMap<String, Boolean>) prefs.getAll();
+        box.setChecked(calendarStates.get(cal.id+""));
         return row;
     }
 }

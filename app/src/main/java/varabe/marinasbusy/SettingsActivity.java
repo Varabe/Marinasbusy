@@ -30,7 +30,7 @@ public class SettingsActivity extends AppCompatActivity {
     void populateList(ListView calendarListView) {
         List<Calendar> calendars = CalendarQuery.getCalendars(this);
         SharedPreferences prefs = getSharedPreferences(CALENDAR_PREFERENCES, Context.MODE_PRIVATE);
-        ArrayAdapter adapter = new CalendarAdapter(this, 0, calendars, prefs.getAll());
+        ArrayAdapter adapter = new CalendarAdapter(this, 0, calendars, prefs);
         calendarListView.setAdapter(adapter);
     }
     public void onCheckBoxClicked(View view) {
