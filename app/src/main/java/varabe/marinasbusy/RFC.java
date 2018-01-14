@@ -24,9 +24,13 @@ class RFC {
     }
     private static String[] getRecurrenceDaysAsLetters(String rrule) {
         Matcher matcher = BYDAY.matcher(rrule);
-        if (!matcher.find()) Log.d(TAG, rrule);
-        String bydayExpression = matcher.group(0); // BYDAY=MO,TU,FR
-        return bydayExpression.split("=")[1].split(",");
+        if (!matcher.find()) {
+            return new String[] {};
+        }
+        else {
+            String bydayExpression = matcher.group(0); // BYDAY=MO,TU,FR
+            return bydayExpression.split("=")[1].split(",");
+        }
     }
     private static int getWeekday(String firstLetters) {
         switch (firstLetters) {

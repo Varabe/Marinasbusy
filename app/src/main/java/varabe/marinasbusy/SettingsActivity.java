@@ -33,7 +33,8 @@ public class SettingsActivity extends AppCompatActivity {
         ArrayAdapter adapter = new CalendarAdapter(this, 0, calendars, prefs.getAll());
         calendarListView.setAdapter(adapter);
     }
-    public void onCheckBoxClicked(CheckBox box) {
+    public void onCheckBoxClicked(View view) {
+        CheckBox box = (CheckBox) view;
         SharedPreferences prefs = getSharedPreferences(CALENDAR_PREFERENCES, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
         editor.putBoolean(box.getId()+"", box.isChecked());
