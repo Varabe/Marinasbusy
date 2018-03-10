@@ -7,6 +7,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -31,6 +32,15 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         if (D) Log.d(TAG, "Began execution");
+
+        FloatingActionButton fab = findViewById(R.id.btnRefresh);
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(D) Log.d(TAG, "User pressed btnRefreshStatus");
+                refreshStatus();
+            }
+        });
     }
     @Override
     protected void onResume() {
@@ -66,10 +76,6 @@ public class MainActivity extends AppCompatActivity {
             default:
                 return false;
         }
-    }
-    public void btnRefreshStatus(View v) {
-        if(D) Log.d(TAG, "User pressed btnRefreshStatus");
-        refreshStatus();
     }
     private boolean checkPermission(String permission, int requestCode) {
         if (hasPermission(permission))
