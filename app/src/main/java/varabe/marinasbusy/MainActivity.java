@@ -18,6 +18,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -113,12 +114,28 @@ public class MainActivity extends AppCompatActivity {
     private void checkSettings() {
         SharedPreferences prefs = getSharedPreferences(CALENDAR_PREFERENCES, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
-        Map allPrefs = prefs.getAll();
+        Map<String, ?> allPrefs = prefs.getAll();
         List<Calendar> calendars = CalendarQuery.getCalendars(this);
+        enterNewCalendars(editor, allPrefs, calendars);
+        removeNonExistingCalendars(editor, allPrefs, calendars);
+        editor.apply();
+    }
+    private void enterNewCalendars(SharedPreferences.Editor editor, Map<String, ?> allPrefs, List<Calendar> calendars) {
         for(Calendar c: calendars) {
             if (!allPrefs.containsKey(c.id + ""))
                 editor.putBoolean(c.id+"", true);
         }
-        editor.apply();
+    }
+    private void removeNonExistingCalendars(SharedPreferences.Editor editor, Map<String, ?> allPrefs, List<Calendar> calendars) {
+        // If a calendar was removed from the device, it should (but doesn't really have to) be removed from prefs
+        ArrayList<Integer> calendarIds = new ArrayList<Integer>(); // Ids are gained for easier iteration
+        for (Calendar c: calendars) {
+            calendarIds.add(c.id);
+        }
+        for (String rawKey: allPrefs.keySet()) {
+            int key = Integer.valueOf(rawKey);
+            if (!calendarIds.contains(key))
+                editor.remove(rawKey);
+        }
     }
 }
