@@ -1,6 +1,7 @@
 package varabe.marinasbusy;
 
 import android.Manifest;
+import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -39,6 +40,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 if(D) Log.d(TAG, "User pressed btnRefreshStatus");
+                ObjectAnimator.ofFloat(view, "rotation", 0, 360).start();
                 refreshStatus();
             }
         });
@@ -128,7 +130,7 @@ public class MainActivity extends AppCompatActivity {
     }
     private void removeNonExistingCalendars(SharedPreferences.Editor editor, Map<String, ?> allPrefs, List<CalendarData> calendars) {
         // If a calendar was removed from the device, it should (but doesn't really have to be removed from prefs
-        ArrayList<Integer> calendarIds = new ArrayList<Integer>(); // Ids are gained for easier iteration
+        ArrayList<Integer> calendarIds = new ArrayList<>(); // Ids are gained for easier iteration
         for (CalendarData c: calendars) {
             calendarIds.add(c.id);
         }

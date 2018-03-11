@@ -19,7 +19,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 
-import static android.icu.util.Calendar.MILLISECONDS_IN_DAY;
+import static varabe.marinasbusy.Duration.MILLISECONDS_IN_DAY;
 import static varabe.marinasbusy.MainActivity.CALENDAR_PREFERENCES;
 import static varabe.marinasbusy.MainActivity.D;
 import static varabe.marinasbusy.MainActivity.TAG;
@@ -56,11 +56,13 @@ class Event {
         return rrule + "\n" + exrule  + "\n" + rdate + "\n" + exdate;
     }
     public boolean isAt(Date time) {
+        if (D) Log.d(TAG, "isAt method called");
         try {
             DateIterator iterator = DateIteratorFactory.createDateIterator(rdata, startDate, TIMEZONE, false);
             while(iterator.hasNext()) {
                 Date start = iterator.next();
                 Date end = new Date(start.getTime() + duration);
+//                if (D) Log.d(TAG, start + "--" + end);
                 if (start.before(time) && end.after(time)) return true;
                 if (start.after(time)) return false;
             }
