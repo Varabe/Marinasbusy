@@ -18,13 +18,13 @@ import java.util.Map;
 import static varabe.marinasbusy.MainActivity.D;
 import static varabe.marinasbusy.MainActivity.TAG;
 
-public class CalendarAdapter extends ArrayAdapter<List<Calendar>> {
+public class CalendarAdapter extends ArrayAdapter<List<CalendarData>> {
 
     private SharedPreferences prefs;
-    private List<Calendar> items;
+    private List<CalendarData> items;
     private Context context;
 
-    CalendarAdapter(@NonNull Context context, int resource, List<Calendar> items, SharedPreferences prefs) {
+    CalendarAdapter(@NonNull Context context, int resource, List<CalendarData> items, SharedPreferences prefs) {
         super(context, resource);
         this.context = context;
         this.items = items;
@@ -40,7 +40,7 @@ public class CalendarAdapter extends ArrayAdapter<List<Calendar>> {
         LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         View row = inflater.inflate(R.layout.calendar_list_item, null,true); //TODO: ViewHolder
         CheckBox box = row.findViewById(R.id.checkItem);
-        Calendar cal = items.get(position);
+        CalendarData cal = items.get(position);
         box.setText(cal.name);
         ColorStateList color = ColorStateList.valueOf(cal.color);
         box.setButtonTintList(color);

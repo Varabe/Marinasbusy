@@ -28,7 +28,7 @@ public class SettingsActivity extends AppCompatActivity {
             actionBar.setTitle(title);
     }
     void populateList(ListView calendarListView) {
-        List<Calendar> calendars = CalendarQuery.getCalendars(this);
+        List<CalendarData> calendars = CalendarQuery.getCalendars(this);
         SharedPreferences prefs = getSharedPreferences(CALENDAR_PREFERENCES, Context.MODE_PRIVATE);
         ArrayAdapter adapter = new CalendarAdapter(this, 0, calendars, prefs);
         calendarListView.setAdapter(adapter);

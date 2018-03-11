@@ -101,7 +101,7 @@ public class MainActivity extends AppCompatActivity {
             time = "";
         } else {
             status = getString(R.string.status_phrase) + " " + currentEvent.getTitle();
-            time = currentEvent.getFormatTime();
+            time = currentEvent.formatTime();
         }
         setNewStatus(status, time);
     }
@@ -115,21 +115,21 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences prefs = getSharedPreferences(CALENDAR_PREFERENCES, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
         Map<String, ?> allPrefs = prefs.getAll();
-        List<Calendar> calendars = CalendarQuery.getCalendars(this);
+        List<CalendarData> calendars = CalendarQuery.getCalendars(this);
         enterNewCalendars(editor, allPrefs, calendars);
         removeNonExistingCalendars(editor, allPrefs, calendars);
         editor.apply();
     }
-    private void enterNewCalendars(SharedPreferences.Editor editor, Map<String, ?> allPrefs, List<Calendar> calendars) {
-        for(Calendar c: calendars) {
+    private void enterNewCalendars(SharedPreferences.Editor editor, Map<String, ?> allPrefs, List<CalendarData> calendars) {
+        for(CalendarData c: calendars) {
             if (!allPrefs.containsKey(c.id + ""))
                 editor.putBoolean(c.id+"", true);
         }
     }
-    private void removeNonExistingCalendars(SharedPreferences.Editor editor, Map<String, ?> allPrefs, List<Calendar> calendars) {
+    private void removeNonExistingCalendars(SharedPreferences.Editor editor, Map<String, ?> allPrefs, List<CalendarData> calendars) {
         // If a calendar was removed from the device, it should (but doesn't really have to) be removed from prefs
         ArrayList<Integer> calendarIds = new ArrayList<Integer>(); // Ids are gained for easier iteration
-        for (Calendar c: calendars) {
+        for (CalendarData c: calendars) {
             calendarIds.add(c.id);
         }
         for (String rawKey: allPrefs.keySet()) {

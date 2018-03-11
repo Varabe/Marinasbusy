@@ -9,15 +9,18 @@ import android.net.Uri;
 import android.provider.CalendarContract.Calendars;
 import android.provider.CalendarContract;
 import android.support.v4.app.ActivityCompat;
+import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
 
-class Calendar {
+import static varabe.marinasbusy.MainActivity.TAG;
+
+class CalendarData {
     public int id, color;
     public String name;
 
-    Calendar(int id, String name, int color) {
+    CalendarData(int id, String name, int color) {
         this.id = id;
         this.name = name;
         this.color = color;
@@ -34,11 +37,12 @@ class CalendarQuery {
     private static final int PROJECTION_DISPLAY_NAME_INDEX = 1;
     private static final int PROJECTION_COLOR_INDEX = 2;
 
-    static List<Calendar> getCalendars(Activity activity) {
+    static List<CalendarData> getCalendars(Activity activity) {
         Cursor cur = getQuery(activity);
-        List<Calendar> calendars = new ArrayList<>();
+        List<CalendarData> calendars = new ArrayList<>();
         while (cur.moveToNext()) {
-            calendars.add(new Calendar(
+            Log.d(TAG, cur.getString(PROJECTION_ID_INDEX) + ":" + cur.getString(PROJECTION_DISPLAY_NAME_INDEX));
+            calendars.add(new CalendarData(
                     cur.getInt(PROJECTION_ID_INDEX),
                     cur.getString(PROJECTION_DISPLAY_NAME_INDEX),
                     cur.getInt(PROJECTION_COLOR_INDEX)

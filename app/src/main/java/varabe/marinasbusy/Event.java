@@ -4,13 +4,18 @@ import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
-import android.icu.text.SimpleDateFormat;
 import android.provider.CalendarContract.Events;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
+import com.google.ical.compat.javautil.DateIterator;
+import com.google.ical.compat.javautil.DateIteratorFactory;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Locale;
 import java.util.Map;
 
 import static varabe.marinasbusy.MainActivity.CALENDAR_PREFERENCES;
@@ -19,118 +24,121 @@ import static varabe.marinasbusy.MainActivity.TAG;
 
 
 class Event {
-    private String title;
-    private Time startTime;
-    private Time endTime;
-    private int[] weekdays;
-    private int weekday = 0;
-    Event(String title, long startTime, long endTime, String rawDuration, String rrule) {
-        long duration = RFC.getDuration(rawDuration);
+    public String getTitle() { return title; }
+    public String getRdata() { return rdata; }
+    public long getDuration() { return duration; }
+    public Date getStartDate() { return startDate; }
+    public Date getEndDate() { return endDate; }
+
+    private static SimpleDateFormat timeFormatter = new SimpleDateFormat("HH:mm", Locale.US);
+    private String title, rdata;
+    private long duration;
+    private Date startDate, endDate;
+    Event(String title, long startTime, String rawDuration, String rrule, String exrule, String rdate, String exdate) {
         this.title = title;
-        if (rrule == null)
-            this.weekday = RFC.getWeekday(startTime);
-        else {
-            this.weekdays = RFC.getWeekdays(rrule);
-            endTime = startTime + duration;
-        }
-        this.startTime = new Time(startTime);
-        this.endTime = new Time(endTime);
+        this.duration = Duration.toMilliseconds(rawDuration);
+        this.startDate = new Date(startTime); // MIGHT CAUSE AN ERROR, because we don't consider the timezone. To consider it, use Calendar and get Date from it
+        this.endDate = new Date(startTime + duration); // Same cause of error might apply
+//        Log.d(TAG, startDate + "----" + endDate);
+        this.rdata = formatRecurrenceData(rrule, exrule, rdate, exdate);
     }
-    boolean isDuring(long time, int weekday) {
-        return isAtWeekday(weekday) && isAtTime(time);
+    private String formatRecurrenceData(String rrule, String exrule, String exdate, String rdate) {
+        if (rrule == null) rrule = "";
+        else rrule = "RRULE:" + rrule;
+        if (exrule == null) exrule = "";
+        else exrule = "EXRULE:" + exrule;
+        if (rdate == null) rdate = "";
+        else rdate = "RDATE:" + rdate;
+        if (exdate == null) exdate = "";
+        else exdate = "EXDATE:" + exdate;
+        return rrule + "\n" + exrule  + "\n" + rdate + "\n" + exdate;
     }
-    String getTitle() {
-        return title;
-    }
-    String getFormatTime() {
-        return String.format("(%s - %s)", startTime, endTime);
-    }
-    long getDuration() {
-        return endTime.getInt() - startTime.getInt();
-    }
-    private boolean isAtWeekday(int weekday) {
-        if (this.weekday != 0)
-            return this.weekday == weekday;
-        else {
-            for (int w: this.weekdays) {
-                if (w == weekday)
-                    return true;
+    public boolean isAt(Date time) {
+        try {
+            DateIterator iterator = DateIteratorFactory.createDateIterator(rdata, startDate, Constant.TIMEZONE, false);
+            while(iterator.hasNext()) {
+                Date start = iterator.next();
+                Log.d(TAG, start+"");
+                Date end = new Date(start.getTime() + duration);
+                if (start.before(time) && end.after(time)) return true;
+                if (start.after(time)) return false;
             }
+        } catch (ParseException e){
+            e.printStackTrace(); // If it happens, I have no idea what to do
         }
         return false;
     }
-    private boolean isAtTime(long timeInMilliseconds) {
-        Time time = new Time(timeInMilliseconds);
-        return (time.isAfter(this.startTime) && time.isBefore(endTime));
+    public String formatTime() {
+        return String.format("(%s - %s)", timeFormatter.format(startDate), timeFormatter.format(endDate));
     }
 }
 class EventQuery {
     private static final String[] EVENT_PROJECTION = {
             Events.TITLE,
             Events.DTSTART,
-            Events.DTEND,
             Events.DURATION,
             Events.RRULE,
+            Events.EXRULE,
+            Events.RDATE,
+            Events.EXDATE,
     };
     private static final int
             PROJECTION_TITLE = 0,
             PROJECTION_DTSTART = 1,
-            PROJECTION_DTEND = 2,
-            PROJECTION_DURATION = 3,
-            PROJECTION_EVENT_RRULE = 4;
-    private static final String querySelectionTemplate = String.format(
-            "%s = %s AND %s = 0 AND ((%s > ?) OR (%s IS NOT NULL))",
-            Events.AVAILABILITY,
-            Events.AVAILABILITY_BUSY,
-            Events.ALL_DAY,
-            Events.DTSTART,
-            Events.RRULE
-    );
+            PROJECTION_DURATION = 2,
+            PROJECTION_RRULE = 3,
+            PROJECTION_EXRULE = 4,
+            PROJECTION_RDATE = 5,
+            PROJECTION_EXDATE = 6;
+    private static final String querySelectionTemplate = ""; // Put any additional query args in here, like "ALL_DAY=0"
     @Nullable
     static Event getCurrent(Activity activity) {
+        Date currentTime = new Date(System.currentTimeMillis());
+        Log.d(TAG, currentTime.toString());
+        Cursor cur = getQuery(activity);
         Event event;
-        long currentTime = System.currentTimeMillis();
-        int currentWeekday = RFC.getWeekday(currentTime);
-        Cursor cur = getQuery(currentTime, activity);
         while (cur.moveToNext()) {
+            String title = cur.getString(PROJECTION_TITLE);
+            Log.d(TAG, title);
+//            if (D && title != null) Log.d(TAG, title + ":" + cur.getLong(PROJECTION_DTSTART) + ":" + cur.getString(PROJECTION_DURATION) + ":" + cur.getString(PROJECTION_EVENT_RRULE) + ":" + cur.getString(PROJECTION_EXRULE) + ":" + cur.getString(PROJECTION_RDATE) + ":" + cur.getString(PROJECTION_EXDATE)); // Amazing logging, I know
             event = new Event(
-                    cur.getString(PROJECTION_TITLE),
+                    title,
                     cur.getLong(PROJECTION_DTSTART),
-                    cur.getLong(PROJECTION_DTEND),
                     cur.getString(PROJECTION_DURATION),
-                    cur.getString(PROJECTION_EVENT_RRULE)
+                    cur.getString(PROJECTION_RRULE),
+                    cur.getString(PROJECTION_EXRULE),
+                    cur.getString(PROJECTION_RDATE),
+                    cur.getString(PROJECTION_EXDATE)
             );
-            if (event.getDuration() < RFC.MILLIS_IN_DAY) {
-                if (event.isDuring(currentTime, currentWeekday)) {
+            if (event.getDuration() < Constant.MILLISECONDS_IN_DAY && event.isAt(currentTime))
                     return event;
-                }
-            }
         }
         return null;
     }
-    private static Cursor getQuery(long currentTime, Activity activity) {
+    private static Cursor getQuery(Activity activity) {
         ContentResolver cr = activity.getContentResolver();
-        String[] selectionArgs = {String.valueOf(currentTime - RFC.MILLIS_IN_DAY)};
-        String querySelection = querySelectionTemplate + getQuerySelectionArgs(activity);
+        String[] selectionArgs = {};
+        String querySelection = getQuerySelectionArgs(activity);
         if (D) Log.d(TAG, "QuerySelection: " + querySelection);
         return cr.query(Events.CONTENT_URI, EVENT_PROJECTION, querySelection, selectionArgs, null);
     }
     private static String getQuerySelectionArgs(Activity activity) {
         // TODO: Refactor this piece of crap
-        String formattedSqlSelection = " AND (";
-        String AND = " AND ";
+        String formattedSqlSelection = "(";
+        String OR = " OR ";
         int INITIAL_LENGTH = formattedSqlSelection.length();
         Map<String, ?> prefsDict = activity.getSharedPreferences(CALENDAR_PREFERENCES, Context.MODE_PRIVATE).getAll();
         for (Map.Entry<String, ?> entry: prefsDict.entrySet()) {
+//            Log.d(TAG, entry.getKey() + ":" + entry.getValue());
             Boolean value = (Boolean) entry.getValue();
-            if (!value) {
-                formattedSqlSelection += Events.CALENDAR_ID + "!=" + entry.getKey() + AND;
+            if (value) {
+                formattedSqlSelection += Events.CALENDAR_ID + "=" + entry.getKey() + OR;
             }
         }
         if(formattedSqlSelection.length() == INITIAL_LENGTH)
             return "";
         else
             // We remove the last " AND " and add the closing parentheses
-            return formattedSqlSelection.substring(0, formattedSqlSelection.length() - AND.length()) + ")";
+            return formattedSqlSelection.substring(0, formattedSqlSelection.length() - OR.length()) + ")";
     }
 }
