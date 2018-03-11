@@ -1,14 +1,10 @@
 package varabe.marinasbusy;
 
-import android.Manifest;
 import android.app.Activity;
 import android.content.ContentResolver;
-import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.CalendarContract.Calendars;
-import android.provider.CalendarContract;
-import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 
 import java.util.ArrayList;

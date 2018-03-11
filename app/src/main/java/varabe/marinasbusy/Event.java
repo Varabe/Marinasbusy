@@ -13,11 +13,13 @@ import com.google.ical.compat.javautil.DateIteratorFactory;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TimeZone;
 
+import static android.icu.util.Calendar.MILLISECONDS_IN_DAY;
 import static varabe.marinasbusy.MainActivity.CALENDAR_PREFERENCES;
 import static varabe.marinasbusy.MainActivity.D;
 import static varabe.marinasbusy.MainActivity.TAG;
@@ -30,6 +32,7 @@ class Event {
     public Date getStartDate() { return startDate; }
     public Date getEndDate() { return endDate; }
 
+    public static final TimeZone TIMEZONE = TimeZone.getTimeZone("UTC");
     private static SimpleDateFormat timeFormatter = new SimpleDateFormat("HH:mm", Locale.US);
     private String title, rdata;
     private long duration;
@@ -37,9 +40,8 @@ class Event {
     Event(String title, long startTime, String rawDuration, String rrule, String exrule, String rdate, String exdate) {
         this.title = title;
         this.duration = Duration.toMilliseconds(rawDuration);
-        this.startDate = new Date(startTime); // MIGHT CAUSE AN ERROR, because we don't consider the timezone. To consider it, use Calendar and get Date from it
-        this.endDate = new Date(startTime + duration); // Same cause of error might apply
-//        Log.d(TAG, startDate + "----" + endDate);
+        this.startDate = new Date(startTime);
+        this.endDate = new Date(startTime + duration);
         this.rdata = formatRecurrenceData(rrule, exrule, rdate, exdate);
     }
     private String formatRecurrenceData(String rrule, String exrule, String exdate, String rdate) {
@@ -55,10 +57,9 @@ class Event {
     }
     public boolean isAt(Date time) {
         try {
-            DateIterator iterator = DateIteratorFactory.createDateIterator(rdata, startDate, Constant.TIMEZONE, false);
+            DateIterator iterator = DateIteratorFactory.createDateIterator(rdata, startDate, TIMEZONE, false);
             while(iterator.hasNext()) {
                 Date start = iterator.next();
-                Log.d(TAG, start+"");
                 Date end = new Date(start.getTime() + duration);
                 if (start.before(time) && end.after(time)) return true;
                 if (start.after(time)) return false;
@@ -94,13 +95,11 @@ class EventQuery {
     @Nullable
     static Event getCurrent(Activity activity) {
         Date currentTime = new Date(System.currentTimeMillis());
-        Log.d(TAG, currentTime.toString());
         Cursor cur = getQuery(activity);
         Event event;
         while (cur.moveToNext()) {
             String title = cur.getString(PROJECTION_TITLE);
-            Log.d(TAG, title);
-//            if (D && title != null) Log.d(TAG, title + ":" + cur.getLong(PROJECTION_DTSTART) + ":" + cur.getString(PROJECTION_DURATION) + ":" + cur.getString(PROJECTION_EVENT_RRULE) + ":" + cur.getString(PROJECTION_EXRULE) + ":" + cur.getString(PROJECTION_RDATE) + ":" + cur.getString(PROJECTION_EXDATE)); // Amazing logging, I know
+            if (D) Log.d(TAG, title);
             event = new Event(
                     title,
                     cur.getLong(PROJECTION_DTSTART),
@@ -110,7 +109,7 @@ class EventQuery {
                     cur.getString(PROJECTION_RDATE),
                     cur.getString(PROJECTION_EXDATE)
             );
-            if (event.getDuration() < Constant.MILLISECONDS_IN_DAY && event.isAt(currentTime))
+            if (event.getDuration() < MILLISECONDS_IN_DAY && event.isAt(currentTime))
                     return event;
         }
         return null;
@@ -118,27 +117,34 @@ class EventQuery {
     private static Cursor getQuery(Activity activity) {
         ContentResolver cr = activity.getContentResolver();
         String[] selectionArgs = {};
-        String querySelection = getQuerySelectionArgs(activity);
+        String querySelection = getCalendarQuerySelections(activity);
         if (D) Log.d(TAG, "QuerySelection: " + querySelection);
         return cr.query(Events.CONTENT_URI, EVENT_PROJECTION, querySelection, selectionArgs, null);
     }
-    private static String getQuerySelectionArgs(Activity activity) {
-        // TODO: Refactor this piece of crap
-        String formattedSqlSelection = "(";
-        String OR = " OR ";
-        int INITIAL_LENGTH = formattedSqlSelection.length();
+    private static String getCalendarQuerySelections(Activity activity) {
+        // Returns a SQL query string that selects all calendars chosen by the user in settings
         Map<String, ?> prefsDict = activity.getSharedPreferences(CALENDAR_PREFERENCES, Context.MODE_PRIVATE).getAll();
-        for (Map.Entry<String, ?> entry: prefsDict.entrySet()) {
-//            Log.d(TAG, entry.getKey() + ":" + entry.getValue());
-            Boolean value = (Boolean) entry.getValue();
-            if (value) {
-                formattedSqlSelection += Events.CALENDAR_ID + "=" + entry.getKey() + OR;
-            }
-        }
-        if(formattedSqlSelection.length() == INITIAL_LENGTH)
+        ArrayList<String> calendarIds = getActiveCalendarIds(prefsDict);
+        if (calendarIds.isEmpty())
             return "";
         else
-            // We remove the last " AND " and add the closing parentheses
-            return formattedSqlSelection.substring(0, formattedSqlSelection.length() - OR.length()) + ")";
+            return constructCalendarQuerySelections(calendarIds);
+    }
+    private static ArrayList<String> getActiveCalendarIds(Map<String, ?> prefsDict) {
+        ArrayList<String> calendarIds = new ArrayList<>();
+        for (Map.Entry<String, ?> entry: prefsDict.entrySet()) {
+//            Log.d(TAG, entry.getKey() + ":" + entry.getValue());
+            Boolean isActive = (Boolean) entry.getValue();
+            if (isActive)
+                calendarIds.add(entry.getKey());
+        }
+        return calendarIds;
+    }
+    private static String constructCalendarQuerySelections(ArrayList<String> calendarIds) {
+        String formattedSqlSelection = "(" + Events.CALENDAR_ID + "=" + calendarIds.remove(0);
+        while(!calendarIds.isEmpty()) {
+            formattedSqlSelection += " OR " + Events.CALENDAR_ID + "=" + calendarIds.remove(0);
+        }
+        return formattedSqlSelection + ")";
     }
 }

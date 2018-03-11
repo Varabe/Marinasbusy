@@ -127,7 +127,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
     private void removeNonExistingCalendars(SharedPreferences.Editor editor, Map<String, ?> allPrefs, List<CalendarData> calendars) {
-        // If a calendar was removed from the device, it should (but doesn't really have to) be removed from prefs
+        // If a calendar was removed from the device, it should (but doesn't really have to be removed from prefs
         ArrayList<Integer> calendarIds = new ArrayList<Integer>(); // Ids are gained for easier iteration
         for (CalendarData c: calendars) {
             calendarIds.add(c.id);

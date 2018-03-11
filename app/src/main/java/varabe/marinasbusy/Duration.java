@@ -11,6 +11,12 @@ abstract class Duration {
      * Java.time.Duration works only for new API, which I didn't target
      * Even if I could use it, it works on slightly different RFC rules than calendar DB
      */
+    public static final long
+            MILLISECONDS_IN_SECOND = 1000,
+            MILLISECONDS_IN_MINUTE = MILLISECONDS_IN_SECOND * 60,
+            MILLISECONDS_IN_HOUR = MILLISECONDS_IN_MINUTE * 60,
+            MILLISECONDS_IN_DAY = MILLISECONDS_IN_HOUR * 24,
+            MILLISECONDS_IN_WEEK = MILLISECONDS_IN_DAY * 7;
     static long toMilliseconds(String rawDuration) {
         List<String> matches = new ArrayList<String>();
         Pattern PATTERN = Pattern.compile("\\d+([SMHDW])");
@@ -31,14 +37,14 @@ abstract class Duration {
         int durationAmount = Integer.valueOf(durationPart.substring(0, lastCharIndex));
         return durationAmount * getDurationLengthCoefficient(durationType);
     }
-    private static int getDurationLengthCoefficient(char durationType) {
+    private static long getDurationLengthCoefficient(char durationType) {
         // TODO: Find better names for those concepts
         switch (durationType) {
-            case ('S'): return 1000;
-            case ('M'): return 60000;
-            case ('H'): return 360000;
-            case ('D'): return 8640000;
-            case ('W'): return 60480000;
+            case ('S'): return MILLISECONDS_IN_SECOND;
+            case ('M'): return MILLISECONDS_IN_MINUTE;
+            case ('H'): return MILLISECONDS_IN_HOUR;
+            case ('D'): return MILLISECONDS_IN_DAY;
+            case ('W'): return MILLISECONDS_IN_WEEK;
             default: return 0;
         }
     }

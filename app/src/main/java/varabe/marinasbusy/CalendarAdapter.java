@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.support.annotation.NonNull;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,10 +12,6 @@ import android.widget.CheckBox;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-
-import static varabe.marinasbusy.MainActivity.D;
-import static varabe.marinasbusy.MainActivity.TAG;
 
 public class CalendarAdapter extends ArrayAdapter<List<CalendarData>> {
 
