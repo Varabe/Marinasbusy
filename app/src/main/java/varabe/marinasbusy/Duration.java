@@ -1,16 +1,22 @@
 package varabe.marinasbusy;
 
 
+import android.util.Log;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static varabe.marinasbusy.MainActivity.D;
+import static varabe.marinasbusy.MainActivity.TAG;
 
 abstract class Duration {
     /*
      * Java.time.Duration works only for new API, which I didn't target
      * Even if I could use it, it works on slightly different RFC rules than calendar DB
      */
+    private static Pattern PATTERN = Pattern.compile("\\d+([SMHDW])");
     public static final long
             MILLISECONDS_IN_SECOND = 1000,
             MILLISECONDS_IN_MINUTE = MILLISECONDS_IN_SECOND * 60,
@@ -18,8 +24,9 @@ abstract class Duration {
             MILLISECONDS_IN_DAY = MILLISECONDS_IN_HOUR * 24,
             MILLISECONDS_IN_WEEK = MILLISECONDS_IN_DAY * 7;
     static long toMilliseconds(String rawDuration) {
+        if (D) Log.d(TAG, "Entered Duration.toMilliseconds with: " + rawDuration);
+        if (rawDuration == null) return 0;
         List<String> matches = new ArrayList<String>();
-        Pattern PATTERN = Pattern.compile("\\d+([SMHDW])");
         Matcher matcher = PATTERN.matcher(rawDuration);
         while (matcher.find()) {
             matches.add(matcher.group());
