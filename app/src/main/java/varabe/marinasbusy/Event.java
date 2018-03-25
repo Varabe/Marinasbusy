@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.TimeZone;
 
 import static varabe.marinasbusy.Duration.MILLISECONDS_IN_DAY;
+import static varabe.marinasbusy.Duration.MILLISECONDS_IN_MINUTE;
 import static varabe.marinasbusy.MainActivity.CALENDAR_PREFERENCES;
 import static varabe.marinasbusy.MainActivity.D;
 import static varabe.marinasbusy.MainActivity.TAG;
@@ -38,6 +39,7 @@ class Event {
     private long duration;
     private Date startDate, endDate;
     Event(String title, long startTime, String rawDuration, String rrule, String exrule, String rdate, String exdate) {
+        Log.d(TAG, "Creating event " + title);
         this.title = title;
         this.duration = Duration.toMilliseconds(rawDuration);
         this.startDate = new Date(startTime);
@@ -57,12 +59,24 @@ class Event {
     }
     public boolean isAt(Date time) {
         if (D) Log.d(TAG, "isAt method called");
+        if (D) Log.d(TAG, "TIME: " + time + ", OFFSET:" + time.getTimezoneOffset());
+        Date start, end;
+        long timezoneOffset = 0;
         try {
             DateIterator iterator = DateIteratorFactory.createDateIterator(rdata, startDate, TIMEZONE, false);
+            if (iterator.hasNext()) {
+                // A fix for timezones
+                start = iterator.next();
+                end = new Date(start.getTime() + duration);
+                if (start.before(time) && end.after(time)) return true;
+                timezoneOffset = start.getTimezoneOffset();
+            }
             while(iterator.hasNext()) {
-                Date start = iterator.next();
-                Date end = new Date(start.getTime() + duration);
-//                if (D) Log.d(TAG, start + "--" + end);
+                start = iterator.next();
+                // A dumb fix for a dumb bug with timezones
+                start.setTime(start.getTime() + (start.getTimezoneOffset() - timezoneOffset) * MILLISECONDS_IN_MINUTE);
+                end = new Date(start.getTime() + duration);
+                if (D) Log.d(TAG, "START:" + start + ", END:" + end + ", OFFSET:" + start.getTimezoneOffset());
                 if (start.before(time) && end.after(time)) return true;
                 if (start.after(time)) return false;
             }
@@ -84,6 +98,8 @@ class EventQuery {
             Events.EXRULE,
             Events.RDATE,
             Events.EXDATE,
+            Events.EVENT_TIMEZONE,
+            Events.EVENT_END_TIMEZONE,
     };
     private static final int
             PROJECTION_TITLE = 0,
@@ -96,12 +112,11 @@ class EventQuery {
     private static final String querySelectionTemplate = ""; // Put any additional query args in here, like "ALL_DAY=0"
     @Nullable
     static Event getCurrent(Activity activity) {
-        Date currentTime = new Date(System.currentTimeMillis());
+        Date currentTime = new Date();
         Cursor cur = getQuery(activity);
         Event event;
         while (cur.moveToNext()) {
             String title = cur.getString(PROJECTION_TITLE);
-            if (D) Log.d(TAG, title);
             event = new Event(
                     title,
                     cur.getLong(PROJECTION_DTSTART),
